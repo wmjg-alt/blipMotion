@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+<title>Blip Test</title>
+</head>
+<body onload="main()" onclick="go()" style="background-color:black;">
+
+<canvas id="arena" style=" position:absolute; top:0px; left:0px; z-index:1"></canvas>
+
+</body>
+</html>
+
+<script>
+var canvas = document.getElementById('arena');
+var ctx = canvas.getContext('2d'); 
+var toggle = true;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+var count_o_blips = 0;
+var population = 50
+var avg_siz = 15;
+var speed_upper = 16;
+var speed_lower = -16;
+var ls_o_blips = [];
+
+function sound(src) {
+	this.sound = document.createElement("audio");
+	this.sound.src = src;
+	this.sound.setAttribute("preload", "auto");
+	this.sound.setAttribute("controls", "none");
+	this.sound.style.display = "none";
+	this.sound.loop = true;
+	document.body.appendChild(this.sound);
+	this.play = function(){
+		this.sound.play();
+	}
+		this.stop = function(){
+		this.sound.pause();
+	}
+} 
+var myMusic = new sound("gametheme.mp3");
+var mtog = false;
+
+function random_in_region(off, siz, origin=0) {
+	var x = off-siz;
+	var randomX = Math.floor(Math.random()*x);
+	return randomX;
+}
+
+function drawOne(blip){
+	ctx = canvas.getContext('2d'); 
+	ctx.beginPath();
+	ctx.arc(blip.x, blip.y, blip.siz, 0, 2 * Math.PI, false);
+	ctx.fillStyle = blip.col;
+	ctx.fill();
+	ctx = canvas.getContext("2d");
+	ctx.font = (avg_siz).toString()+'px Arial';
+	ctx.fillStyle = 'red';
+	ctx.textAlign = 'center';
+	ctx.fillText(blip.dir, blip.x, blip.y+6);
+}
+function random_color(){
+	var randomColor = '#'+Math.floor(Math.random()*16777215).toString(16);
+    return randomColor;
+}
+
+function random_traj(){
+	var n = Math.floor(Math.random()*9) -4;
+	return n;
+}
+function checkdir(b){
+	return Math.round(Math.atan2(b.ytraj,b.xtraj)* -180 / Math.PI).toString();
+}
+function makeOne(num,siz){
+	var tmp = {x:random_in_region(canvas.width,siz),y:random_in_region(canvas.height,siz),id:num,col:"aqua", xtraj:random_traj(), ytraj:random_traj(), siz:siz, dir:0};
+	tmp.dir = checkdir(tmp);
+	drawOne(tmp);
+	return tmp;
+}
+
+function updateOne(blip){
+		if(blip.x + blip.xtraj >= canvas.width || blip.x + blip.xtraj < 0){blip.xtraj *= -1;}
+		if(blip.y + blip.ytraj >= canvas.height || blip.y + blip.ytraj < 0){blip.ytraj *= -1;}
+		blip.x += blip.xtraj;
+		blip.y += blip.ytraj;
+		var chance2turn = Math.floor(Math.random()*9);
+		if (chance2turn == 1){//TURN E/W
+			blip.xtraj += (Math.floor(Math.random()*5)-2)
+		}
+		if (chance2turn == 2){//TURN N/S
+			blip.ytraj += (Math.floor(Math.random()*5)-2)
+		}
+		if (blip.xtraj >= speed_upper || blip.xtraj <= speed_lower){blip.xtraj = random_traj();}
+		if (blip.ytraj >= speed_upper || blip.ytraj <= speed_lower){blip.ytraj = random_traj();}
+		blip.dir = checkdir(blip)
+		drawOne(blip);
+		return blip
+}
+
+function update(){
+	ctx = canvas.getContext('2d'); 
+	ctx.clearRect(0,0, ctx.canvas.width, ctx.canvas.height)
+	for(i=0; i< ls_o_blips.length;i++){
+		ls_o_blips[i] = updateOne(ls_o_blips[i]);
+	}
+}
+
+function main(){
+	while (count_o_blips < population) {
+		ls_o_blips.push(makeOne(count_o_blips, avg_siz));
+		count_o_blips+=1;
+	}
+}
+function music(){
+	mtog = !mtog;
+	if (mtog){myMusic.play();}
+	else {myMusic.stop();}
+}
+
+function go(){
+	music()
+	var interval = setInterval(function(){
+		update();
+	},40);
+}
+
+
+
+</script>
